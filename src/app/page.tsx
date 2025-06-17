@@ -1,103 +1,172 @@
-import Image from "next/image";
+"use client"; // This component runs on the client side
 
-export default function Home() {
-  return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm/6 text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-[family-name:var(--font-geist-mono)] font-semibold">
-              src/app/page.tsx
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
+import React, { useState, useEffect } from 'react';
+import AdminPage from '@/app/admin/page';
+import UserPage from '@/app/user/page';
+import LoginPage from '@/components/LoginPage';
+import RegisterPage from '@/components/RegisterPage';
+import GuestHomePage from '@/components/GuestHomePage';
+import Navbar from '@/components/Navbar';
+import PaymentPage from '@/components/PaymentPage';
+import ForgotPasswordPage from '@/components/ForgotPasswordPage'; // Import komponen ForgotPasswordPage
+import Footer from '@/components/Footer';
+import { User, Order } from '@/app/types';
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+const App = () => {
+  // --- PERBAIKAN DI SINI ---
+  // Pastikan tipe ini mencakup SEMUA tampilan yang mungkin.
+  const [currentView, setCurrentView] = useState<'login' | 'register' | 'user' | 'admin' | 'guest' | 'payment' | 'forgot-password'>('guest');
+  // --- AKHIR PERBAIKAN ---
+
+  const [user, setUser] = useState<User | null>(null);
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [orderToPay, setOrderToPay] = useState<Order | null>(null);
+  const [message, setMessage] = useState<string>('');
+  const [messageType, setMessageType] = useState<'success' | 'error' | ''>('');
+
+  const showMessage = (msg: string, type: 'success' | 'error') => {
+    setMessage(msg);
+    setMessageType(type);
+    setTimeout(() => {
+      setMessage('');
+      setMessageType('');
+    }, 3000);
+  };
+
+  useEffect(() => {
+    const checkAuth = async () => {
+      setIsLoading(true);
+      try {
+        const response = await fetch(`${window.location.origin}/api/auth/login`, {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        });
+
+        if (!response.ok) {
+          const errorText = await response.text();
+          console.error('Pemeriksaan autentikasi gagal dengan status:', response.status, 'Teks respons:', errorText);
+          setIsAuthenticated(false);
+          setCurrentView('guest');
+          return;
+        }
+
+        const data = await response.json();
+
+        if (data.isAuthenticated) {
+          setIsAuthenticated(true);
+          setUser(data.user as User);
+          if (data.user && (data.user as User).role === 'admin') {
+            setCurrentView('admin');
+          } else {
+            setCurrentView('user');
+          }
+        } else {
+          setCurrentView('guest');
+        }
+      } catch (error) {
+        console.error('Kesalahan memeriksa autentikasi:', error);
+        setIsAuthenticated(false);
+        setCurrentView('guest');
+        showMessage('Kesalahan jaringan saat memeriksa autentikasi.', 'error');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    checkAuth();
+  }, []);
+
+  const handleLogout = async () => {
+    try {
+      const response = await fetch(`${window.location.origin}/api/auth/logout`, {
+        method: 'POST',
+      });
+      if (response.ok) {
+        setIsAuthenticated(false);
+        setUser(null);
+        setCurrentView('guest');
+        showMessage('Logout berhasil!', 'success');
+      } else {
+        const errorText = await response.text();
+        console.error('Logout failed with status:', response.status, 'Response text:', errorText);
+        showMessage('Logout gagal.', 'error');
+      }
+    } catch (error) {
+      console.error('Logout error:', error);
+      showMessage('Logout gagal karena kesalahan jaringan.', 'error');
+    }
+  };
+
+  const handleInitiatePayment = (order: Order) => {
+    setOrderToPay(order);
+    setCurrentView('payment');
+  };
+
+  const handlePaymentComplete = (status: 'paid' | 'cancelled' | 'expired', orderId: number) => {
+    setOrderToPay(null);
+    if (isAuthenticated) {
+      setCurrentView('user');
+    } else {
+      setCurrentView('guest');
+    }
+    if (status === 'paid') {
+      showMessage('Pembayaran Anda berhasil!', 'success');
+    } else if (status === 'cancelled') {
+      showMessage('Pembayaran Anda dibatalkan.', 'error');
+    } else if (status === 'expired') {
+      showMessage('Waktu pembayaran habis. Pesanan dibatalkan.', 'error');
+    }
+  };
+
+
+  const renderContent = () => {
+    if (isLoading) {
+      return (
+        <div className="flex items-center justify-center min-h-screen bg-gray-100">
+          <div className="text-xl font-semibold text-gray-700">Memuat...</div>
         </div>
-      </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
+      );
+    }
+
+    switch (currentView) {
+      case 'guest':
+        return <GuestHomePage setCurrentView={setCurrentView} />;
+      case 'login':
+        return <LoginPage setCurrentView={setCurrentView} setIsAuthenticated={setIsAuthenticated} setUser={setUser} showMessage={showMessage} />;
+      case 'register':
+        return <RegisterPage setCurrentView={setCurrentView} showMessage={showMessage} />;
+      case 'admin':
+        return <AdminPage user={user} handleLogout={handleLogout} showMessage={showMessage} />;
+      case 'user':
+        return <UserPage user={user} handleLogout={handleLogout} showMessage={showMessage} onInitiatePayment={handleInitiatePayment} />;
+      case 'payment':
+        return <PaymentPage order={orderToPay} showMessage={showMessage} onPaymentComplete={handlePaymentComplete} />;
+      case 'forgot-password':
+        return <ForgotPasswordPage setCurrentView={setCurrentView} showMessage={showMessage} />;
+      default:
+        return <GuestHomePage setCurrentView={setCurrentView} />;
+    }
+  };
+
+  return (
+    <div className="min-h-screen bg-gray-100 flex flex-col">
+      <Navbar user={user} handleLogout={handleLogout} setCurrentView={setCurrentView} />
+
+      <div className="flex-1 pt-16 flex items-center justify-center">
+        {renderContent()}
+      </div>
+
+     
+
+      {message && (
+        <div className={`fixed top-4 right-4 p-4 rounded-lg shadow-lg text-white z-50 ${messageType === 'success' ? 'bg-green-500' : 'bg-red-500'}`}>
+          {message}
+        </div>
+      )}
     </div>
   );
-}
+};
+
+export default App;
