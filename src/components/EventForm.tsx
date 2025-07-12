@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { createEvent, fetchCategories } from '@/lib/api';
 import { Event, Category } from '@/app/types';
-import { RiTeamFill, RiCalendarEventFill, RiMapPinFill, RiInformationFill, RiImageAddFill } from 'react-icons/ri';
+import { RiTeamFill, RiCalendarEventFill, RiMapPinFill, RiInformationFill, RiImageAddFill, RiLoader4Line } from 'react-icons/ri';
 
 interface EventFormProps {
   onEventCreated: (event: Event) => void;
@@ -55,7 +55,7 @@ const EventForm: React.FC<EventFormProps> = ({ onEventCreated, showMessage }) =>
     e.preventDefault();
     setLoading(true);
 
-    const newEventData: Omit<Event, 'id' | 'created_at' | 'price' | 'available_tickets' | 'name'> = {
+    const newEventData: Omit<Event, 'id' | 'created_at' | 'price' | 'available_tickets' | 'name' | 'category' | 'tickets_available'> = {
       team1_name: formData.team1Name,
       team2_name: formData.team2Name,
       team1_logo_url: formData.team1LogoUrl || undefined,
@@ -64,8 +64,8 @@ const EventForm: React.FC<EventFormProps> = ({ onEventCreated, showMessage }) =>
       location: formData.location,
       date: formData.date,
       category_id: parseInt(formData.categoryId),
-      tickets_available: undefined,
-      category: undefined
+      // category: undefined, // DIHAPUS
+      // tickets_available: undefined // DIHAPUS
     };
 
     try {
@@ -114,7 +114,7 @@ const EventForm: React.FC<EventFormProps> = ({ onEventCreated, showMessage }) =>
                 type="text"
                 id="team1Name"
                 name="team1Name"
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-200 text-gray-900 placeholder-gray-700" // text-gray-900, placeholder-gray-700
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-200 text-gray-900 placeholder-gray-700"
                 value={formData.team1Name}
                 onChange={handleChange}
                 required
@@ -128,7 +128,7 @@ const EventForm: React.FC<EventFormProps> = ({ onEventCreated, showMessage }) =>
                 type="url"
                 id="team1LogoUrl"
                 name="team1LogoUrl"
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-200 text-gray-900 placeholder-gray-700" // text-gray-900, placeholder-gray-700
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-200 text-gray-900 placeholder-gray-700"
                 placeholder="https://example.com/logo1.png"
                 value={formData.team1LogoUrl}
                 onChange={handleChange}
@@ -154,7 +154,7 @@ const EventForm: React.FC<EventFormProps> = ({ onEventCreated, showMessage }) =>
                 type="text"
                 id="team2Name"
                 name="team2Name"
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-200 text-gray-900 placeholder-gray-700" // text-gray-900, placeholder-gray-700
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-200 text-gray-900 placeholder-gray-700"
                 value={formData.team2Name}
                 onChange={handleChange}
                 required
@@ -168,7 +168,7 @@ const EventForm: React.FC<EventFormProps> = ({ onEventCreated, showMessage }) =>
                 type="url"
                 id="team2LogoUrl"
                 name="team2LogoUrl"
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-200"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-200 text-gray-900 placeholder-gray-700"
                 placeholder="https://example.com/logo2.png"
                 value={formData.team2LogoUrl}
                 onChange={handleChange}
@@ -193,7 +193,7 @@ const EventForm: React.FC<EventFormProps> = ({ onEventCreated, showMessage }) =>
               type="text"
               id="location"
               name="location"
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-200 text-gray-900 placeholder-gray-700" // text-gray-900, placeholder-gray-700
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-200 text-gray-900 placeholder-gray-700"
               value={formData.location}
               onChange={handleChange}
               required
@@ -207,7 +207,7 @@ const EventForm: React.FC<EventFormProps> = ({ onEventCreated, showMessage }) =>
               type="datetime-local"
               id="date"
               name="date"
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-200 text-gray-900 placeholder-gray-700" // text-gray-900, placeholder-gray-700
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-200 text-gray-900 placeholder-gray-700"
               value={formData.date}
               onChange={handleChange}
               required
@@ -223,7 +223,7 @@ const EventForm: React.FC<EventFormProps> = ({ onEventCreated, showMessage }) =>
             id="description"
             name="description"
             rows={3}
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-200 text-gray-900 placeholder-gray-700" // text-gray-900, placeholder-gray-700
+            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-200 text-gray-900 placeholder-gray-700"
             value={formData.description}
             onChange={handleChange}
           />
@@ -240,7 +240,7 @@ const EventForm: React.FC<EventFormProps> = ({ onEventCreated, showMessage }) =>
             <select
               id="categoryId"
               name="categoryId"
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-200 text-gray-900" // text-gray-900
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-200 text-gray-900"
               value={formData.categoryId}
               onChange={handleChange}
               required

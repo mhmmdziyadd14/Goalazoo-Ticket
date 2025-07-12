@@ -5,8 +5,9 @@ import pool from '@/lib/database';
 export async function GET(request: Request, { params }: { params: { id: string } }) {
   try {
     const { id } = params;
+    // Pastikan 'category_id' dipilih di sini
     const [event] = await pool.query(
-      'SELECT id, team1_name, team2_name, team1_logo_url, team2_logo_url, description, date, location, created_at FROM events WHERE id = ?',
+      'SELECT id, team1_name, team2_name, team1_logo_url, team2_logo_url, description, date, location, category_id, created_at FROM events WHERE id = ?',
       [id]
     ) as any;
 
@@ -24,7 +25,7 @@ export async function GET(request: Request, { params }: { params: { id: string }
 export async function PUT(request: Request, { params }: { params: { id: string } }) {
   try {
     const { id } = params;
-    const { team1_name, team2_name, team1_logo_url, team2_logo_url, description, date, location } = await request.json();
+    const { team1_name, team2_name, team1_logo_url, team2_logo_url, description, date, location, category_id } = await request.json(); // Ambil category_id
 
     // Periksa apakah event ada
     const [existingEvent] = await pool.query('SELECT id FROM events WHERE id = ?', [id]) as any;
@@ -32,14 +33,15 @@ export async function PUT(request: Request, { params }: { params: { id: string }
       return NextResponse.json({ error: 'Event tidak ditemukan' }, { status: 404 });
     }
 
+    // Pastikan 'category_id' disertakan dalam query UPDATE
     await pool.query(
-      'UPDATE events SET team1_name = ?, team2_name = ?, team1_logo_url = ?, team2_logo_url = ?, description = ?, date = ?, location = ? WHERE id = ?',
-      [team1_name, team2_name, team1_logo_url, team2_logo_url, description, date, location, id]
+      'UPDATE events SET team1_name = ?, team2_name = ?, team1_logo_url = ?, team2_logo_url = ?, description = ?, date = ?, location = ?, category_id = ? WHERE id = ?',
+      [team1_name, team2_name, team1_logo_url, team2_logo_url, description, date, location, category_id, id]
     );
 
-    // Ambil event yang diperbarui untuk dikembalikan
+    // Pastikan 'category_id' dipilih saat mengembalikan event yang diperbarui
     const [updatedEvent] = await pool.query(
-      'SELECT id, team1_name, team2_name, team1_logo_url, team2_logo_url, description, date, location, created_at FROM events WHERE id = ?',
+      'SELECT id, team1_name, team2_name, team1_logo_url, team2_logo_url, description, date, location, category_id, created_at FROM events WHERE id = ?',
       [id]
     ) as any;
 

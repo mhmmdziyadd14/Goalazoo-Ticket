@@ -1,9 +1,10 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
-import { User } from '@/app/types'; // Import User type
-import { fetchAdminStats, fetchOrders } from '@/lib/api'; // Import fetchAdminStats, fetchOrders
-import { RiFileListLine, RiUserLine, RiShoppingCartLine, RiPriceTag3Line, RiDashboardLine, RiInformationLine, RiLoader5Fill } from 'react-icons/ri'; // Import ikon
+import { User } from '@/app/types';
+import { fetchAdminStats } from '@/lib/api';
+import LeagueStandings from '@/components/LeagueStandings'; // Import komponen baru
+import { RiFileListLine, RiUserLine, RiShoppingCartLine, RiPriceTag3Line, RiDashboardLine, RiInformationLine, RiLoader5Fill, RiTableLine } from 'react-icons/ri'; // Tambahkan RiTableLine
 
 interface AdminDashboardPageProps {
   user: User | null;
@@ -94,7 +95,7 @@ const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({ user, showMessa
       )}
 
       {/* Informasi Admin Section (contoh) */}
-      <div className="bg-gray-50 p-6 rounded-lg border border-gray-200">
+      <div className="bg-gray-50 p-6 rounded-lg border border-gray-200 mb-8">
         <h3 className="text-xl font-semibold text-gray-800 mb-4 flex items-center gap-2">
           <RiInformationLine /> Informasi Admin
         </h3>
@@ -105,7 +106,10 @@ const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({ user, showMessa
         </ul>
       </div>
 
-      {/* Mungkin Anda ingin menambahkan bagian grafik atau tabel ringkasan di sini */}
+      {/* Bagian Klasemen Liga */}
+      <div className="w-full">
+        <LeagueStandings showMessage={showMessage} />
+      </div>
     </div>
   );
 };

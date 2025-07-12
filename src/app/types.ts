@@ -12,7 +12,6 @@ export interface User {
 }
 
 export interface Event {
-  tickets_available: ReactNode;
   category: ReactNode;
   id: number;
   team1_name: string;
@@ -42,7 +41,7 @@ export interface Order {
   tribune_id?: number;
   quantity: number;
   total_price: number;
-  booking_code?: string; // Tambahkan booking_code
+  booking_code?: string;
   order_date?: string;
   status: 'pending' | 'paid' | 'cancelled';
 }
@@ -52,4 +51,64 @@ export interface Category {
   name: string;
   description?: string;
   created_at?: string;
+}
+
+// --- Tipe Data Baru untuk Klasemen Liga (API-Football) ---
+
+export interface Team {
+  id: number;
+  name: string;
+  logo: string;
+}
+
+export interface Goals {
+  for: number;
+  against: number;
+}
+
+export interface LeagueStats {
+  played: number;
+  win: number;
+  draw: number;
+  lose: number;
+  goals: Goals;
+}
+
+export interface Standing {
+  rank: number;
+  team: Team;
+  points: number;
+  goalsDiff: number;
+  group: string; // Misal: "Group A" atau "Total"
+  form: string; // Misal: "WWLDD"
+  status: string; // Misal: "same", "up", "down"
+  description: string | null; // Misal: "Promotion - Champions League"
+  all: LeagueStats;
+  home: LeagueStats;
+  away: LeagueStats;
+  update: string;
+}
+
+export interface League {
+  id: number;
+  name: string;
+  country: string;
+  logo: string;
+  flag: string;
+  season: number;
+  standings: Standing[][]; // Array of arrays, karena bisa ada grup
+}
+
+export interface ApiResponse {
+  get: string;
+  parameters: any;
+  errors: any[];
+  results: number;
+  paging: {
+    current: number;
+    total: number;
+  };
+  response: {
+    league: League;
+  }[];
 }

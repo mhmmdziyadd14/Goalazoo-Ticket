@@ -1,6 +1,6 @@
 // src/lib/api.ts
 
-import { Event, User, Order, Tribune, Category } from '@/app/types';
+import { Event, User, Order, Tribune, Category, ApiResponse, League } from '@/app/types'; // Import ApiResponse, League
 
 const API_BASE_URL = typeof window !== 'undefined' ? window.location.origin : '';
 
@@ -304,12 +304,8 @@ export async function deleteCategory(id: number): Promise<{ message: string }> {
   }
 }
 
-// --- Fungsi API Baru untuk Statistik Dashboard Admin ---
+// --- Fungsi API untuk Statistik Dashboard Admin ---
 
-/**
- * Mengambil statistik ringkasan untuk dashboard admin.
- * @returns Objek yang berisi total event, user, order, dan kategori.
- */
 export async function fetchAdminStats(): Promise<{
   totalEvents: number;
   totalUsers: number;
@@ -317,10 +313,12 @@ export async function fetchAdminStats(): Promise<{
   totalCategories: number;
 }> {
   try {
-    const events = await fetchEvents();
-    const users = await fetchUsers();
-    const orders = await fetchOrders(); // Orders can be filtered by status if needed
-    const categories = await fetchCategories();
+    const [events, users, orders, categories] = await Promise.all([
+      fetchEvents(),
+      fetchUsers(),
+      fetchOrders(),
+      fetchCategories(),
+    ]);
 
     return {
       totalEvents: events.length,
@@ -330,6 +328,32 @@ export async function fetchAdminStats(): Promise<{
     };
   } catch (error) {
     console.error('Error fetching admin stats:', error);
+    throw error;
+  }
+}
+
+// --- Fungsi API Baru untuk Klasemen Liga ---
+
+/**
+ * Mengambil data klasemen liga dari API-Football melalui proxy backend.
+ * @param leagueId ID liga (contoh: 39 untuk Premier League).
+ * @param season Tahun musim (contoh: 2024).
+ * @returns Objek League yang berisi data klasemen.
+ */
+export async function fetchLeagueStandings(leagueId: number, season: number): Promise<League> {
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/standings?league=${leagueId}&season=${season}`, {
+      cache: 'no-store' // Pastikan data selalu baru
+    });
+    const data: ApiResponse = await handleApiResponse<ApiResponse>(response);
+
+    if (data.response && data.response.length > 0) {
+      return data.response[0].league;
+    } else {
+      throw new Error('Data klasemen tidak ditemukan atau API respons kosong.');
+    }
+  } catch (error) {
+    console.error(`Kesalahan saat mengambil klasemen liga ${leagueId} musim ${season}:`, error);
     throw error;
   }
 }

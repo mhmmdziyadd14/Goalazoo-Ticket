@@ -1,8 +1,8 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
-import { Event, Category } from '@/app/types'; // Import Category
-import { fetchEvents, deleteEvent, updateEvent, fetchCategories } from '@/lib/api'; // Import fetchCategories
+import { Event, Category } from '@/app/types';
+import { fetchEvents, deleteEvent, updateEvent, fetchCategories } from '@/lib/api';
 import TribuneManagement from '@/components/TribuneManagement';
 import {
   RiCalendarEventLine,
@@ -14,7 +14,8 @@ import {
   RiMapPinLine,
   RiTimeLine,
   RiInformationLine,
-  RiImageAddFill
+  RiImageAddFill,
+  RiLoader4Line
 } from 'react-icons/ri';
 import { MdStadium } from "react-icons/md";
 
@@ -24,9 +25,9 @@ interface EventListProps {
 
 const EventList: React.FC<EventListProps> = ({ showMessage }) => {
   const [events, setEvents] = useState<Event[]>([]);
-  const [categories, setCategories] = useState<Category[]>([]); // State untuk kategori
+  const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
-  const [loadingCategories, setLoadingCategories] = useState<boolean>(true); // Loading state untuk kategori
+  const [loadingCategories, setLoadingCategories] = useState<boolean>(true);
   const [editingEvent, setEditingEvent] = useState<Event | null>(null);
   const [managingTribunesForEvent, setManagingTribunesForEvent] = useState<Event | null>(null);
 
@@ -35,6 +36,7 @@ const EventList: React.FC<EventListProps> = ({ showMessage }) => {
     try {
       const data = await fetchEvents();
       setEvents(data);
+      console.log('Events loaded from API:', data); // DEBUG
     } catch (error: any) {
       showMessage(error.message || 'Gagal memuat acara.', 'error');
     } finally {
@@ -47,6 +49,7 @@ const EventList: React.FC<EventListProps> = ({ showMessage }) => {
     try {
       const data = await fetchCategories();
       setCategories(data);
+      console.log('Categories loaded from API:', data); // DEBUG
     } catch (error: any) {
       showMessage(error.message || 'Gagal memuat kategori.', 'error');
     } finally {
@@ -56,7 +59,7 @@ const EventList: React.FC<EventListProps> = ({ showMessage }) => {
 
   useEffect(() => {
     loadEvents();
-    loadCategories(); // Muat kategori saat komponen dimuat
+    loadCategories();
   }, []);
 
   const handleDelete = async (id: number) => {
@@ -64,7 +67,7 @@ const EventList: React.FC<EventListProps> = ({ showMessage }) => {
       try {
         await deleteEvent(id);
         showMessage('Acara berhasil dihapus!', 'success');
-        loadEvents(); // Reload events after deletion
+        loadEvents();
       } catch (error: any) {
         showMessage(error.message || 'Gagal menghapus acara.', 'error');
       }
@@ -89,7 +92,7 @@ const EventList: React.FC<EventListProps> = ({ showMessage }) => {
           description: editingEvent.description,
           date: editingEvent.date,
           location: editingEvent.location,
-          category_id: editingEvent.category_id, // Sertakan category_id di sini
+          category_id: editingEvent.category_id,
         };
         await updateEvent(editingEvent.id, updatedData);
         showMessage('Acara berhasil diperbarui!', 'success');
@@ -100,16 +103,25 @@ const EventList: React.FC<EventListProps> = ({ showMessage }) => {
       }
     };
 
-    // Fungsi pembantu untuk mendapatkan nama kategori dari ID
-    const getCategoryName = (categoryId: number) => {
+    const getCategoryName = (categoryId?: number) => {
+        if (categoryId === undefined || categoryId === null) {
+            return 'Tidak Dikenal (ID: Kosong)';
+        }
+        if (loadingCategories) { // Jika kategori masih dimuat, tampilkan pesan loading
+            return 'Memuat Kategori...';
+        }
         const category = categories.find(cat => cat.id === categoryId);
-        return category ? category.name : 'Tidak Dikenal';
+        if (!category) {
+            // Jika ID tidak ditemukan setelah loading selesai, tampilkan ID untuk debugging
+            return `Tidak Dikenal (ID: ${categoryId})`;
+        }
+        return category.name;
     };
 
-    if (loading || loadingCategories) { // Perbarui kondisi loading
+    if (loading || loadingCategories) {
       return (
         <div className="flex justify-center items-center h-64">
-          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+          <RiLoader4Line className="animate-spin text-4xl text-blue-600" />
         </div>
       );
     }
@@ -147,7 +159,7 @@ const EventList: React.FC<EventListProps> = ({ showMessage }) => {
                             id={`editTeam1Name-${event.id}`}
                             value={editingEvent.team1_name}
                             onChange={(e) => setEditingEvent({ ...editingEvent, team1_name: e.target.value })}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-200 text-gray-900 placeholder-gray-700" // text-gray-900, placeholder-gray-700
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-200 text-gray-900 placeholder-gray-700"
                             required
                           />
                         </div>
@@ -160,7 +172,7 @@ const EventList: React.FC<EventListProps> = ({ showMessage }) => {
                             id={`editTeam1Logo-${event.id}`}
                             value={editingEvent.team1_logo_url || ''}
                             onChange={(e) => setEditingEvent({ ...editingEvent, team1_logo_url: e.target.value })}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-200 text-gray-900 placeholder-gray-700" // text-gray-900, placeholder-gray-700
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-200 text-gray-900 placeholder-gray-700"
                           />
                         </div>
                         <div>
@@ -172,7 +184,7 @@ const EventList: React.FC<EventListProps> = ({ showMessage }) => {
                             id={`editTeam2Name-${event.id}`}
                             value={editingEvent.team2_name}
                             onChange={(e) => setEditingEvent({ ...editingEvent, team2_name: e.target.value })}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-200 text-gray-900 placeholder-gray-700" // text-gray-900, placeholder-gray-700
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-200 text-gray-900 placeholder-gray-700"
                             required
                           />
                         </div>
@@ -185,7 +197,7 @@ const EventList: React.FC<EventListProps> = ({ showMessage }) => {
                             id={`editTeam2Logo-${event.id}`}
                             value={editingEvent.team2_logo_url || ''}
                             onChange={(e) => setEditingEvent({ ...editingEvent, team2_logo_url: e.target.value })}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-200 text-gray-900 placeholder-gray-700" // text-gray-900, placeholder-gray-700
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-200 text-gray-900 placeholder-gray-700"
                           />
                         </div>
                       </div>
@@ -200,7 +212,7 @@ const EventList: React.FC<EventListProps> = ({ showMessage }) => {
                             id={`editLocation-${event.id}`}
                             value={editingEvent.location}
                             onChange={(e) => setEditingEvent({ ...editingEvent, location: e.target.value })}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-200 text-gray-900 placeholder-gray-700" // text-gray-900, placeholder-gray-700
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-200 text-gray-900 placeholder-gray-700"
                             required
                           />
                         </div>
@@ -213,7 +225,7 @@ const EventList: React.FC<EventListProps> = ({ showMessage }) => {
                             id={`editDate-${event.id}`}
                             value={editingEvent.date}
                             onChange={(e) => setEditingEvent({ ...editingEvent, date: e.target.value })}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-200 text-gray-900 placeholder-gray-700" // text-gray-900, placeholder-gray-700
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-200 text-gray-900 placeholder-gray-700"
                             required
                           />
                         </div>
@@ -227,7 +239,7 @@ const EventList: React.FC<EventListProps> = ({ showMessage }) => {
                           id={`editDescription-${event.id}`}
                           value={editingEvent.description || ''}
                           onChange={(e) => setEditingEvent({ ...editingEvent, description: e.target.value })}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-200 text-gray-900 placeholder-gray-700" // text-gray-900, placeholder-gray-700
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-200 text-gray-900 placeholder-gray-700"
                           rows={3}
                         />
                       </div>
@@ -244,7 +256,7 @@ const EventList: React.FC<EventListProps> = ({ showMessage }) => {
                                 id={`editCategory-${event.id}`}
                                 value={editingEvent.category_id}
                                 onChange={(e) => setEditingEvent({ ...editingEvent, category_id: parseInt(e.target.value) })}
-                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-200 text-gray-900" // text-gray-900
+                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-200 text-gray-900"
                                 required
                             >
                                 {categories.map(cat => (
